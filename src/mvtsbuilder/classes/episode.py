@@ -8,6 +8,7 @@
     Usage example:
 
 """
+import json
 
 class Episode:
 
@@ -24,6 +25,12 @@ class Episode:
         Returns:
             self attributes with corresponding names
         """
+        
+        self.time_resolution = None
+        self.input_time_len = None
+        self.output_time_len = None
+        self.time_lag = None
+        self.anchor_gap = None
 
         if time_unit is None:
             time_unit = "(time unit not specified)"
@@ -59,5 +66,16 @@ class Episode:
             f'--- increase by every {self.time_resolution} {self.time_unit}(s)',
             f'--- last at most {self.anchor_gap} {self.time_unit}(s) long'
         ])
+    
+    def document(self):
+        # document episode definition as json file under meta_data folder
+        with open("./meta_data/episode.json", "w") as outfile:
+            json.dump(self.__dict__, outfile)
+            print("episode.json file is saved under meta_data folder")
+    
+    def show(self):
+        json_object = json.dumps(self.__dict__, indent = 4) 
+        print(json_object)
+
 
         
