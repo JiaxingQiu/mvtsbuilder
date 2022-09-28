@@ -12,11 +12,14 @@ from mvtsbuilder.functions.make_mvts_df_from_csv import *
 from mvtsbuilder.functions.cohort_fillna import *
 from mvtsbuilder.functions.make_mvts_tfds_from_df import *
 from mvtsbuilder.functions.extract_xy import *
+from mvtsbuilder.functions.create_csv_pool import *
+from mvtsbuilder.functions.cmp_src_csv import *
 from mvtsbuilder.classes.episode import Episode
 import random
 from datetime import datetime
 import os
 import json
+from importlib import resources
 
 class Project:
     
@@ -54,87 +57,22 @@ class Project:
         # set initial datetime for a project instance
         self.datetime = str(datetime.now())
         print('Project begins at: ' + str(self.datetime))
-
         # set study working directory
         self.work_dir = work_dir
+        assert os.path.exists(self.work_dir), 'Working directory not found: '+str(self.work_dir)
         os.chdir(self.work_dir)
         print('Working directory: ' + str(self.work_dir))
-
         # set meta data of dictionarys directory 
         self.meta_dir = str(self.work_dir) + '/meta_data'
         if not os.path.exists(self.meta_dir):
             os.mkdir(self.meta_dir)
         print('Meta_data directory: ' + str(self.meta_dir))
-
         # set variable_dict
-        try:
-            fullname = str(self.meta_dir)+'/variable_dict.json'
-            f = open(fullname, "r")
-            self.variable_dict = json.loads(f.read())
-            print("Project variable dictionary loaded;")
-        except:
-            print("Unable to read variable dictionary. Please provide 'YOUR_PROJECT_WORKING_DIR/metadata/variable_dict.json' file.")
+        self.load_variable_dict()
         # set csv_source_dict
-        try:
-            fullname = str(self.meta_dir)+'/csv_source_dict.json'
-            f = open(fullname, "r")
-            self.csv_source_dict = json.loads(f.read())
-            print("Project csv_source dictionary loaded;")
-        except:
-            print("Unable to read csv source dictionary. Please provide 'YOUR_PROJECT_WORKING_DIR/metadata/csv_source_dict.json' file.")
-        # set sql_source_dict
-        try:
-            fullname = str(self.meta_dir)+'/sql_source_dict.json'
-            f = open(fullname, "r")
-            self.sql_source_dict = json.loads(f.read())
-            print("Project sql_source dictionary loaded;")
-        except:
-            print("Unable to read sql source dictionary. Please provide 'YOUR_PROJECT_WORKING_DIR/metadata/sql_source_dict.json' file.")
-        
-        # set input_vars/output_vars by variable_dict
-        output_vars = []
-        output_vars_byside = [] # variables that have "output:false", they are Projected but not included in final ML matrices
-        for var_dict in self.variable_dict.keys():
-            if 'output' in self.variable_dict[var_dict].keys():
-                if self.variable_dict[var_dict]['output']:
-                    if 'factor' in self.variable_dict[var_dict].keys():
-                        l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
-                        v_list = [str(var_dict) + '___' + l for l in l_list]
-                        output_vars = output_vars + v_list
-                    if 'numeric' in self.variable_dict[var_dict].keys():
-                        output_vars = output_vars + [var_dict]
-                else:
-                    if 'factor' in self.variable_dict[var_dict].keys():
-                        l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
-                        v_list = [str(var_dict) + '___' + l for l in l_list]
-                        output_vars_byside = output_vars_byside + v_list
-                    if 'numeric' in self.variable_dict[var_dict].keys():
-                        output_vars_byside = output_vars_byside + [var_dict]
-        assert len(output_vars)>0, 'Project couldn\'t find output columns corresponding to the variable dictionary'
-        input_vars = []
-        input_vars_byside = [] # variables that have "input:false", they are Projected but not included in final ML matrices
-        for var_dict in self.variable_dict.keys():
-            if 'input' in self.variable_dict[var_dict].keys():
-                if self.variable_dict[var_dict]['input']:
-                    if 'factor' in self.variable_dict[var_dict].keys():
-                        l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
-                        v_list = [str(var_dict) + '___' + l for l in l_list]
-                        input_vars = input_vars + v_list
-                    if 'numeric' in self.variable_dict[var_dict].keys():
-                        input_vars = input_vars + [var_dict]
-                else:
-                    if 'factor' in self.variable_dict[var_dict].keys():
-                        l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
-                        v_list = [str(var_dict) + '___' + l for l in l_list]
-                        input_vars_byside = input_vars_byside + v_list
-                    if 'numeric' in self.variable_dict[var_dict].keys():
-                        input_vars_byside = input_vars_byside + [var_dict]
-        assert len(input_vars)>0, 'Project couldn\'t find input columns corresponding to the variable dictionary'
-        self.input_vars = input_vars
-        self.output_vars = output_vars
-        self.input_vars_byside = input_vars_byside
-        self.output_vars_byside = output_vars_byside
-        
+        self.load_csv_source_dict()
+
+       
     def __str__(self):
         """print project updated constants and variables at any time
 
@@ -146,6 +84,10 @@ class Project:
                 'datetime': str(self.datetime),
                 'working_dir': str(self.work_dir),
                 'meta_data_dir': str(self.meta_dir),
+                'dictionary': {
+                    'variable_dict': str(self.meta_dir)+'/variable_dict.json' if self.variable_dict is not None else str(self.meta_dir)+'/variable_dict.json not found',
+                    'csv_source_dict': str(self.meta_dir)+'/csv_source_dict.json' if self.csv_source_dict is not None else str(self.meta_dir)+'/csv_source_dict.json not found'
+                },
                 'ml_var':{
                     'inputs': str(self.input_vars),
                     'outputs': str(self.output_vars),
@@ -159,9 +101,79 @@ class Project:
         print(json.dumps(self.hist, indent=2))
         return 'Project Status'
 
+    def load_variable_dict(self):
+        try:
+            fullname = str(self.meta_dir)+'/variable_dict.json'
+            f = open(fullname, "r")
+            self.variable_dict = json.loads(f.read())
+            print("Project variable dictionary loaded;")
+        except:
+            print("--- Project variable_dict.json not exist. ---")
+            print("You can put a previous 'variable_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
+            print("Or, You can use function .new_demo_variable_dict() to create one. Please modify the newly created file '"+str(self.work_dir)+"/meta_data/demo_variable_dict_TIMESTAMP.json' and save it as '"+str(self.work_dir)+"/meta_data/variable_dict.json';")
+        if self.variable_dict is not None:
+            # set input_vars/output_vars by variable_dict
+            output_vars = []
+            output_vars_byside = [] # variables that have "output:false", they are Projected but not included in final ML matrices
+            for var_dict in self.variable_dict.keys():
+                if 'output' in self.variable_dict[var_dict].keys():
+                    if self.variable_dict[var_dict]['output']:
+                        if 'factor' in self.variable_dict[var_dict].keys():
+                            l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
+                            v_list = [str(var_dict) + '___' + l for l in l_list]
+                            output_vars = output_vars + v_list
+                        if 'numeric' in self.variable_dict[var_dict].keys():
+                            output_vars = output_vars + [var_dict]
+                    else:
+                        if 'factor' in self.variable_dict[var_dict].keys():
+                            l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
+                            v_list = [str(var_dict) + '___' + l for l in l_list]
+                            output_vars_byside = output_vars_byside + v_list
+                        if 'numeric' in self.variable_dict[var_dict].keys():
+                            output_vars_byside = output_vars_byside + [var_dict]
+            assert len(output_vars)>0, 'Project couldn\'t find output columns corresponding to the variable dictionary'
+            input_vars = []
+            input_vars_byside = [] # variables that have "input:false", they are Projected but not included in final ML matrices
+            for var_dict in self.variable_dict.keys():
+                if 'input' in self.variable_dict[var_dict].keys():
+                    if self.variable_dict[var_dict]['input']:
+                        if 'factor' in self.variable_dict[var_dict].keys():
+                            l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
+                            v_list = [str(var_dict) + '___' + l for l in l_list]
+                            input_vars = input_vars + v_list
+                        if 'numeric' in self.variable_dict[var_dict].keys():
+                            input_vars = input_vars + [var_dict]
+                    else:
+                        if 'factor' in self.variable_dict[var_dict].keys():
+                            l_list = list(self.variable_dict[var_dict]['factor']['levels'].keys())
+                            v_list = [str(var_dict) + '___' + l for l in l_list]
+                            input_vars_byside = input_vars_byside + v_list
+                        if 'numeric' in self.variable_dict[var_dict].keys():
+                            input_vars_byside = input_vars_byside + [var_dict]
+            assert len(input_vars)>0, 'Project couldn\'t find input columns corresponding to the variable dictionary'
+            self.input_vars = input_vars
+            self.output_vars = output_vars
+            self.input_vars_byside = input_vars_byside
+            self.output_vars_byside = output_vars_byside
     
-
+    def load_csv_source_dict(self):
+        try:
+            fullname = str(self.meta_dir)+'/csv_source_dict.json'
+            f = open(fullname, "r")
+            self.csv_source_dict = json.loads(f.read())
+            print("Project csv_source dictionary loaded;")
+        except:
+            print("--- Project csv_source_dict.json not exist. ---")
+            print("You can put a previous 'csv_source_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
+            print("Or, You can use function .new_demo_csv_source_dict() to create one. Please modify the newly created file '"+str(self.work_dir)+"/meta_data/demo_csv_source_dict_TIMESTAMP.json' and save it as '"+str(self.work_dir)+"/meta_data/csv_source_dict.json';")
+    
     def def_episode(self, input_time_len, output_time_len, time_resolution=None, time_lag=None, anchor_gap=None):
+        # relaod dictionaries
+        self.load_variable_dict()
+        # make sure Project has variable_dict object at hand by now
+        if self.variable_dict is None: 
+            return
+        # initiate episode instance
         self.episode = Episode(input_time_len, output_time_len, self.variable_dict['__time']['unit'], time_resolution=time_resolution, time_lag=time_lag, anchor_gap=anchor_gap)
         # collect success history dictionary
         print("Success! Project has updated attributes --- episode. ")
@@ -170,7 +182,7 @@ class Project:
 
          
     def build_mvts(self, csv_pool_dir=None, df_raw=None, nsbj=None, frac=0.3, replace=True, topn_eps=None, viz=False, viz_ts=False, stratify_by=None, dummy_na=False, sep="---", return_episode=True, skip_uid=None, keep_uid=None):
-       
+        
         # make sure Project has episode object at hand by now
         if self.episode is None:
             return 'No episode defined -- you can use def_episode() to define one'
@@ -188,6 +200,11 @@ class Project:
         else:
             print("csv_pool_dir: "+str(csv_pool_dir))
             if df_raw is None:
+                # reload csv_source_dict
+                self.load_csv_source_dict()
+                # stop if csv_source dict is not ready
+                if self.csv_source_dict is None:
+                    return
                 # sampling from csv_pool
                 if self.df_csv_fullname_ls is None:
                     self.df_csv_fullname_ls = init_csv_fullname_ls(csv_pool_dir, sep=sep)
@@ -374,4 +391,55 @@ class Project:
         return X_train, Y_train, X_valid, Y_valid, X_test, Y_test
 
     
+    def new_demo_variable_dict(self):
+        # load demo.json file from package data
+        with resources.path("mvtsbuilder.data", "demo_variable_dict.json") as f:
+            from_path = f
+        json_obj = open(from_path, "r")
+        # read dict_demo in dictionary object
+        dict_demo = json.loads(json_obj.read())
+        # save it to meta_data folder under user project working directory
+        with open(self.meta_dir + '/demo_variable_dict_'+str(datetime.now())+'.json', 'w') as f:
+            json.dump(dict_demo, f)
+        print("A new demo of variable dictionary is ready for you, using path: \n")
+        return str(self.meta_dir) + '/demo_variable_dict_'+str(datetime.now())+'.json'
     
+    
+    def new_demo_csv_source_dict(self):
+        # load demo.json file from package data
+        with resources.path("mvtsbuilder.data", "demo_csv_source_dict.json") as f:
+            from_path = f
+        json_obj = open(from_path, "r")
+        # read dict_demo in dictionary object
+        dict_demo = json.loads(json_obj.read())
+        # save it to meta_data folder under user project working directory
+        with open(self.meta_dir + '/demo_csv_source_dict_'+str(datetime.now())+'.json', 'w') as f:
+            json.dump(dict_demo, f)
+        print("A new demo of csv source dictionary is ready for you, using path: \n")
+        return str(self.meta_dir) + '/demo_csv_source_dict_'+str(datetime.now())+'.json'
+      
+    def create_csv_pool(self, csv_pool_dir=None, overwrite=False, source_key=None, file_key=None, sep="---"):
+        import os
+        if csv_pool_dir is None: # set default csv chunk pool dir
+            csv_pool_dir = self.work_dir + '/csv_pool'
+            if not os.path.exists(csv_pool_dir):
+                os.mkdir(csv_pool_dir)
+            else:
+                if overwrite:
+                    print('you are overwriting csv_pool in dir -- ' + csv_pool_dir)
+                else: 
+                    print(str(csv_pool_dir) + ' already exist, you can remove the folder or set overwrite=True')
+                    return
+        self.load_csv_source_dict()
+        self.load_variable_dict()
+        assert self.csv_source_dict is not None, 'csv_source_dict.json not exist!'
+        assert self.variable_dict is not None, 'variable_dict.json not exist!'
+        create_csv_pool(self.csv_source_dict, self.variable_dict, csv_pool_dir, source_key=source_key, file_key=file_key, sep=sep)
+      
+    def cmp_src_csv(self, nrows=None, var_list=None):
+        self.load_csv_source_dict()
+        self.load_variable_dict()
+        assert self.csv_source_dict is not None, 'csv_source_dict.json not exist!'
+        assert self.variable_dict is not None, 'variable_dict.json not exist!'
+        cmp_src_csv(self.csv_source_dict, self.variable_dict, nrows=nrows, var_list=var_list)
+ 

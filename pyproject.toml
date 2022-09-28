@@ -5,6 +5,7 @@ description = "Build d machine learning friendly MVTS( (multi-variable time seri
 authors = ["Jiaxing Qiu"]
 license = "MIT"
 readme = "README.md"
+include = ["data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
