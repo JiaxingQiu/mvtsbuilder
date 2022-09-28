@@ -176,6 +176,7 @@ class Project:
             return 'No episode defined -- you can use def_episode() to define one'
         episode = self.episode
         # validate argument csv_pool_dir and df_raw
+        hist1 = "Not Run" # sampling
         if csv_pool_dir is None:
             print("Argument is None -- csv_pool_dir")
             if df_raw is None:
@@ -183,6 +184,7 @@ class Project:
                 return 'Neither csv_pool direstory nor external table object found -- please specify at least one'
             else: 
                 print("Project is Projecting customized table format data ---")
+                hist1 = {'from': 'given dataframe object'}
         else:
             print("csv_pool_dir: "+str(csv_pool_dir))
             if df_raw is None:
@@ -192,12 +194,31 @@ class Project:
                 if replace:
                     print("Project is sampling with replacement from csv_pool --- ")
                     self.df_csv_fullname_ls = init_csv_fullname_ls(csv_pool_dir, sep=sep)
+                    hist1 = {'from': 'csv_pool', 'path': str(csv_pool_dir), 'sep': str(sep)}
                 else:
                     print("Project is sampling without replacement from csv_pool --- ")
+                    hist1 = {'from': 'csv_pool', 'path': str(csv_pool_dir), 'sep': str(sep)}
             else:
                 print("Project is Projecting customized table format data ---")
+                hist1 = {'from': 'given dataframe object'}
+        # special arguments
+        hist2 = {
+            'with_replacement': 'yes' if replace else 'no',
+            'skip_uid': str(skip_uid) if skip_uid is not None else 'Not specified',
+            'keep_uid': str(keep_uid) if keep_uid is not None else 'Not specified',
+            'dummy_na': str(dummy_na),
+            'stratify_by': str(stratify_by) if stratify_by is not None else 'None'
+        }
 
+        # building process
+        hist3 = "Not Run" # 'return'
         self.mvts_df, self.df_csv_fullname_ls, self.sample_info, self.sbj_df = make_mvts_df_from_csv(self.df_csv_fullname_ls, nsbj, frac, self.csv_source_dict, self.variable_dict, episode.input_time_len, episode.output_time_len, episode.time_resolution, episode.time_lag, episode.anchor_gap, stratify_by=stratify_by, viz=viz, viz_ts=viz_ts, dummy_na=dummy_na, topn_eps=topn_eps, return_episode=return_episode, skip_uid=skip_uid, keep_uid=keep_uid, df_raw=df_raw)
+        hist3 = {
+            'nsubjects': len(self.mvts_df['__uid'].unique()) if self.mvts_df is not None else 'Unknown',
+            'notes': str(self.sample_info),
+            'episode_wise_df': 'YOUR PROJECT.mvts_df' if self.mvts_df is not None else 'No return',
+            'subject_wise_df': 'YOUR PROJECT.sbj_df' if self.sbj_df is not None else 'No return'
+        }
         # check input/output variable names
         if self.mvts_df is not None:
             output_vars = []
@@ -240,10 +261,11 @@ class Project:
                 pass
 
             print("Success! Project has updated attributes --- mvts_df, sbj_df, sample_info, df_csv_fullname_ls")
-            self.hist_build_mvts = {
-                'datetime':str(datetime.now()),
-                'stratify_by':stratify_by
-            }
+            self.hist_build_mvts = {'datetime':str(datetime.now())}
+            self.hist_build_mvts.update({'data_source':hist1})
+            self.hist_build_mvts.update({'sampling':hist2})
+            self.hist_build_mvts.update({'return':hist3})
+            
 
 
     def split_mvts(self, valid_frac=0, test_frac=0, byepisode=False, batch_size=32, impute_input=None, impute_output=None, fill_value=-333, viz=False):
