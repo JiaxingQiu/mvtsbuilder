@@ -13,7 +13,7 @@ $ pip install mvtsbuilder
 'mvtsbuilder' can build Multi-variable Time Seris data in pandas DataFrame or Tensorflow Dataset format, to use in Machine Learning or Deep Learning tools. 
 Usage is as follows:
 
-### Create your mvts project 
+**Create your mvts project**<br> 
 
 ```python
 import mvtsbuilder
@@ -23,7 +23,7 @@ prj = mvtsbuilder.project(work_dir)
 print(prj)
 ```
 
-### Put dictionary in place
+Put dictionary in place
 
 - 'variable_dict.json' need to be prepared in "meta_data" folder under your working directory. 
 - 'csv_source_dict.json' need to be prepared in "meta_data" folder under your working directory if you are sampling data from csv_pool.
@@ -34,7 +34,7 @@ prj.new_demo_csv_source_dict()
 print(prj)
 ```
 
-### Define Episode
+Define Episode
 
 ```python
 prj.def_episode(
@@ -46,7 +46,7 @@ prj.def_episode(
 print(prj)
 
 ```
-### Build MVTS DataFrame 
+Build MVTS DataFrame 
 
 ```python
 # from raw DataFrame object
@@ -64,7 +64,7 @@ prj.build_mvts(
     sep = '_')
 print(prj)
 ```
-### Split MVTS DataFrame to ML DF and TFDS
+Split MVTS DataFrame to ML DF and TFDS
 
 ```python
 prj.split_mvts(
