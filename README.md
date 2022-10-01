@@ -23,7 +23,7 @@ prj = mvtsbuilder.project(work_dir)
 print(prj)
 ```
 
-Put dictionary in place
+**Put dictionary in place**<br> 
 
 - 'variable_dict.json' need to be prepared in "meta_data" folder under your working directory. 
 - 'csv_source_dict.json' need to be prepared in "meta_data" folder under your working directory if you are sampling data from csv_pool.
@@ -34,7 +34,7 @@ prj.new_demo_csv_source_dict()
 print(prj)
 ```
 
-Define Episode
+**Define Episode**<br> 
 
 ```python
 prj.def_episode(
@@ -46,7 +46,7 @@ prj.def_episode(
 print(prj)
 
 ```
-Build MVTS DataFrame 
+**Build MVTS DataFrame**<br> 
 
 ```python
 # from raw DataFrame object
@@ -64,7 +64,7 @@ prj.build_mvts(
     sep = '_')
 print(prj)
 ```
-Split MVTS DataFrame to ML DF and TFDS
+**Split MVTS DataFrame to ML DF and TFDS**<br> 
 
 ```python
 prj.split_mvts(
