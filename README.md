@@ -10,7 +10,72 @@ $ pip install mvtsbuilder
 
 ## Usage
 
-- TODO
+'mvtsbuilder' can build Multi-variable Time Seris data in pandas DataFrame or Tensorflow Dataset format, to use in Machine Learning or Deep Learning tools. 
+Usage is as follows:
+
+### Create your mvts project 
+
+```python
+import mvtsbuilder
+
+work_dir = "your project folder directory" # path to your project folder
+prj = mvtsbuilder.project(work_dir)
+print(prj)
+```
+
+### Put dictionary in place
+
+- 'variable_dict.json' need to be prepared in "meta_data" folder under your working directory. 
+- 'csv_source_dict.json' need to be prepared in "meta_data" folder under your working directory if you are sampling data from csv_pool.
+
+```python
+prj.new_demo_variable_dict()
+prj.new_demo_csv_source_dict()
+print(prj)
+```
+
+### Define Episode
+
+```python
+prj.def_episode(
+    input_time_len=4*24*60,
+    output_time_len=1*24*60, 
+    time_resolution=60, 
+    time_lag=0, 
+    anchor_gap=7*24*60)
+print(prj)
+
+```
+### Build MVTS DataFrame 
+
+```python
+# from raw DataFrame object
+import pandas as pd
+
+df = pd.read_csv("PATH_TO_YOUR_CSV.csv")
+prj.build_mvts(df_raw=df)
+print(prj)
+
+# from csv_pool
+csv_pool_path = 'PATH_TO_YOUR_CSV_POOL'
+prj.build_mvts(
+    csv_pool_dir = csv_pool_path, 
+    nsbj = 1000, 
+    sep = '_')
+print(prj)
+```
+### Split MVTS DataFrame to ML DF and TFDS
+
+```python
+prj.split_mvts(
+    valid_frac = 0.2, 
+    test_frac = 0.1, 
+    impute_input='median', # imputation on predictors
+    impute_output='none',# imputation on response (no need in BSI project)
+    byepisode = True, 
+    batch_size = 64)
+print(prj)
+```
 
 ## Contributing
 
