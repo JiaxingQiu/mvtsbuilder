@@ -24,6 +24,29 @@ from importlib import resources
 class Project:
     
     def __init__(self, work_dir):
+        """Initiate a mvtsbuilder project, usually about a machine learning problem.
+
+        Current working directory will be changed to given work_dir. 
+        A meta_data folder will be automatedly created under work_dir if not exist. 
+        Dictionary files including "variable_dict.json" and "csv_source_dict.json" will attempted to be read 
+        from meta_data folder.
+
+        Parameters
+        ----------
+        work_dir : str
+            Path to your project working directory/foler.
+
+        Returns
+        -------
+        mvtsbuilder.Project
+            object with attributes and functions to engineer MVTS machine learning datasets.
+
+        Examples
+        --------
+        >>> mvtsbuilder.Project("parent_folders/myproject")
+        """
+        
+
         self.hist = None # over all history
         self.datetime = None
         self.work_dir = None
@@ -40,6 +63,7 @@ class Project:
         self.hist_build_mvts = None# update by calling build_mvts()
         self.sample_info = None 
         self.df_csv_fullname_ls = None
+        self.df_raw_uid_ls = None
         self.sbj_df = None
         self.mvts_df = None
         self.hist_split_mvts = None # update by calling split_mvts()
@@ -74,9 +98,23 @@ class Project:
 
        
     def __str__(self):
-        """print project updated constants and variables at any time
+        """Print a mvtsbuilder project and its working history.
 
-        Returns:
+        It's a good habit to print the mvtsbuilder project object after each step in the process, to monitor its updated attributes and function logs.
+        The function calling history at a certain processing status will be documented and printed in dictionary format. 
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        mvtsbuilder.Project.hist
+            dict-like object with project object attributes and functions running log/history.
+
+        Examples
+        --------
+        >>> myprj = mvtsbuilder.Project("parent_folders/myproject")
+        >>> print(myprj)
         """
         
         self.hist = {
@@ -102,11 +140,41 @@ class Project:
         return 'Project Status'
 
     def load_variable_dict(self):
+        """Read variable dictionary object as an attribute of mvtsbuilder project.
+        
+        Attribute variable_dict will be open and read from variable_dict.json file under work_dir/meta_data folder.
+        Attribute variable_dict has information of each variable to be used in a machine learning problem, 
+        such as its type(numeric/factor), how it should be imputed, its outlier cutoffs, the final unified name if 
+        multiple sources of data will be used. 
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        mvtsbuilder.Project.variable_dict
+            dict-like object of variable information involved in current project, usually a machine learning or data processing problem.
+        mvtsbuilder.Project.input_vars
+            list of explanatory variable names as input of a model
+        mvtsbuilder.Project.output_vars
+            list of responce variable names as output of a model
+        mvtsbuilder.Project.input_vars_byside
+            list of candidate explanatory variable names to be engineered but not included as the input of a ML model.
+        mvtsbuilder.Project.output_vars_byside
+            list of candidate responce variable names to be engineered but not included as the output of n a ML model.
+        
+        Examples
+        --------
+        >>> myprj = mvtsbuilder.Project("parent_folders/myproject")
+        >>> myprj.load_variable_dict()
+        >>> print(myprj)
+        """
         try:
             fullname = str(self.meta_dir)+'/variable_dict.json'
             f = open(fullname, "r")
             self.variable_dict = json.loads(f.read())
             print("Project variable dictionary loaded;")
+            print(json.dumps(self.variable_dict, indent=2))
         except:
             print("--- Project variable_dict.json not exist. ---")
             print("You can put a previous 'variable_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
@@ -156,18 +224,71 @@ class Project:
             self.input_vars_byside = input_vars_byside
             self.output_vars_byside = output_vars_byside
     
+
     def load_csv_source_dict(self):
+        """Read csv sources dictionary object as an attribute of mvtsbuilder project.
+        
+        Attribute csv_source_dict will be open and read from csv_source_dict.json file under work_dir/meta_data folder.
+        Attribute csv_source_dict has information of each csv format data from different sources to be used in a machine learning problem, 
+        such as its file path, source institute name, what major content it's about, how it should be merged with other sources.
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        mvtsbuilder.Project.csv_source_dict
+            dict-like object of csv data source information involved in current project, usually a machine learning or data processing problem.
+        
+        Examples
+        --------
+        >>> myprj = mvtsbuilder.Project("parent_folders/myproject")
+        >>> myprj.load_csv_source_dict()
+        >>> print(myprj)
+        """
+
         try:
             fullname = str(self.meta_dir)+'/csv_source_dict.json'
             f = open(fullname, "r")
             self.csv_source_dict = json.loads(f.read())
             print("Project csv_source dictionary loaded;")
+            print(json.dumps(self.csv_source_dict, indent=2))
         except:
             print("--- Project csv_source_dict.json not exist. ---")
             print("You can put a previous 'csv_source_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
             print("Or, You can use function .new_demo_csv_source_dict() to create one. Please modify the newly created file '"+str(self.work_dir)+"/meta_data/demo_csv_source_dict_TIMESTAMP.json' and save it as '"+str(self.work_dir)+"/meta_data/csv_source_dict.json';")
     
     def def_episode(self, input_time_len, output_time_len, time_resolution=None, time_lag=None, anchor_gap=None):
+        """Define Episode for a MVTS project.
+        
+        Episode is a key temporal concept in a Multi-Varaible Time Series (MVTS) project, that's prerequisite in other mvtsbuilder functionailties. 
+        Project.episode need to be defined to let mvtsbuilder know the temporal structure of your dataset.
+
+        Parameters
+        ----------
+        input_time_len: float
+            time length before an anchor of episode to use as input in ML, in raw temporal scale defined in variable_dict
+        output_time_len: float
+            time length after an anchor of episode to use as output in ML, in raw temporal scale defined in variable_dict
+        time_resolution: float
+            how long in raw scale is aggregated into a unit in final episode, i.e. if your raw data is in minutes, you want to convert it to an hour per row, 60 should be given here.
+        time_lag: float
+            lag of time before input(X) chunk and output(y) chunk within an episode if any, in otehr words, how long you want to forecast ahead of the outcome. 
+        anchor_gap: float
+            minimum length of time (gap) between 2 episodes in raw scale. 
+
+        Returns
+        -------
+        mvtsbuilder.Project.episode
+            dict-like object of  the definition of episide for current machine learning setting
+
+        Examples
+        --------
+        >>> myprj = mvtsbuilder.Project("parent_folders/myproject")
+        >>> myprj.def_episode(input_time_len=4*24*60,output_time_len=1*24*60, time_resolution=60, time_lag=0, anchor_gap=7*24*60)
+        >>> print(myprj)
+        """
+        
         # relaod dictionaries
         self.load_variable_dict()
         # make sure Project has variable_dict object at hand by now
@@ -181,43 +302,176 @@ class Project:
         self.hist_def_episode.update(self.episode.__dict__)
 
          
-    def build_mvts(self, csv_pool_dir=None, df_raw=None, nsbj=None, frac=0.3, replace=True, topn_eps=None, viz=False, viz_ts=False, stratify_by=None, dummy_na=False, sep="---", return_episode=True, skip_uid=None, keep_uid=None):
+    def build_mvts(self, source=None, nsbj=None, frac=0.3, replace=True, stratify_by=None, skip_uid=None, keep_uid=None, return_episode=True, topn_eps=None, dummy_na=False, sep="---", viz=False, viz_ts=False):
+        """Build episode-wise Multi-Variable Time Series DataFrame.
         
+        
+        Parameters
+        ----------
+        source: string or pandas.core.frame.DataFrame
+            the source of data, supporting formats include a pandas dataframe, a string of the path to the csv_pool directory.
+        nsbj: int
+            number of subjects to sample from the source, it can be None.
+        frac: float
+            sampling rate or fraction of subjects from the source, not work if nsbj is given.
+        replace: bool
+            sampling subjects from source data with or without replacement, True means with replacement.
+        stratify_by: list
+            list of final variable names by which, sampling should be stratefied by.
+        skip_uid: list
+            list of subject IDs that user specified to skip engineering.
+        keep_uid: list
+            list of subject IDs that user specified to engieer.
+        return_episode: bool
+            whether or not an episode-wise MVTS dataframe mvts_df should be returned, if False, only subject-wise dataframe sbj_df will be returned.
+        topn_eps: int
+            keep first N episode per subject.
+        sep: str
+            special separating string used in csv_pool naming fashion, default is "---". 
+        dummy_na: bool
+            [under construction] whether or not a column of indicator of NA should be created for each variable.
+        viz: bool
+            [under improvement] whether or not to visualize distribution of each variable, and their stratified distribution by outcome
+        viz_ts: bool
+            [under improvement] whether or not to visualize time series of each variable, and their stratified time series trend by outcome
+
+
+        Returns
+        -------
+        mvtsbuilder.Project.mvts_df
+            pandas.DataFrame object of multi-variable time series data of stacked episodes. 
+        mvtsbuilder.Project.sbj_df
+            pandas.DataFrame object of subject-wise data that's been sampled, cleaned and engineered. 
+        mvtsbuilder.Project.sample_info
+            string of the information of sample size, and cohort size in terms of enrolled subjects.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> myprj = mvtsbuilder.Project("parent_folders/myproject")
+        >>> df = pd.read_csv(".../yourdata.csv")
+        >>> myprj.build_mvts(source=df, nsbj=300)
+        >>> myprj.build_mvts(source="csv_pool_path", nsbj=100, replace=True, sep='_')
+        >>> print(myprj)
+        """
+
         # make sure Project has episode object at hand by now
         if self.episode is None:
             return 'No episode defined -- you can use def_episode() to define one'
         episode = self.episode
-        # validate argument csv_pool_dir and df_raw
-        hist1 = "Not Run" # sampling
-        if csv_pool_dir is None:
-            print("Argument is None -- csv_pool_dir")
-            if df_raw is None:
-                print("Argument is None -- df_raw")
-                return 'Neither csv_pool direstory nor external table object found -- please specify at least one'
-            else: 
-                print("Project is Projecting customized table format data ---")
-                hist1 = {'from': 'given dataframe object'}
+
+
+        # interpret source as csv_pool_dir or df_raw
+        csv_pool_dir = None # the path to csv_pool directory
+        df_raw = None # raw dataframe object
+        if str(type(source)).__eq__("<class 'str'>"):
+            csv_pool_dir = source
+        elif str(type(source)).__eq__("<class 'pandas.core.frame.DataFrame'>"):
+            df_raw = source
         else:
-            print("csv_pool_dir: "+str(csv_pool_dir))
-            if df_raw is None:
-                # reload csv_source_dict
-                self.load_csv_source_dict()
-                # stop if csv_source dict is not ready
-                if self.csv_source_dict is None:
-                    return
-                # sampling from csv_pool
-                if self.df_csv_fullname_ls is None:
-                    self.df_csv_fullname_ls = init_csv_fullname_ls(csv_pool_dir, sep=sep)
-                if replace:
-                    print("Project is sampling with replacement from csv_pool --- ")
-                    self.df_csv_fullname_ls = init_csv_fullname_ls(csv_pool_dir, sep=sep)
-                    hist1 = {'from': 'csv_pool', 'path': str(csv_pool_dir), 'sep': str(sep)}
+            return "Parameter 'source' must be one of these types: <class 'str'> / <class 'pandas.core.frame.DataFrame'>"
+        
+        # fix argument nsbj and frac
+        if nsbj is not None:
+            if str(type(nsbj)).__eq__("<class 'int'>"):
+                if int(nsbj) >= 1:
+                    nsbj = int(nsbj)
+                    frac = 0.3 # set as default
                 else:
-                    print("Project is sampling without replacement from csv_pool --- ")
-                    hist1 = {'from': 'csv_pool', 'path': str(csv_pool_dir), 'sep': str(sep)}
+                    return "Parameter 'nsbj' must be >= 1!"
             else:
-                print("Project is Projecting customized table format data ---")
-                hist1 = {'from': 'given dataframe object'}
+                return "Parameter 'nsbj' must be int type or None!"
+        else:
+            if str(type(frac)).__eq__("<class 'float'>"):
+                if float(frac)>0 and float(frac)<=1:
+                    frac = float(frac)
+                else:
+                    return "Parameter 'frac' must range in (0, 1]"
+            else:
+                return "Parameter 'frac' must be float type!"
+            
+        
+        hist1 = "Not Run" # sampling
+        ################# generate MVTS from df_raw #################
+        # filtering raw dataframe by requests
+        if df_raw is not None:
+            print("Project is Projecting customized table format data ---")
+            hist1 = {'from': 'pandas dataframe object'}
+            # find __uid column in the raw data
+            uid_col = list(set(self.variable_dict['__uid']['src_names']).intersection(set(df_raw.columns)))[0]
+            uid_ls_raw = list(df_raw[uid_col].unique()) # all the uid list from original df_raw
+            ## initiate all_uid list from scratch or sampling history
+            if self.df_raw_uid_ls is None:
+                all_uid = uid_ls_raw
+            else:
+                assert len(self.df_raw_uid_ls)>0, "No subject left to be been sampled from!"
+                all_uid = self.df_raw_uid_ls
+            ## trim all_uid list
+            # skip uid in "skip_uid list"
+            all_uid2 = all_uid
+            if skip_uid is not None:
+                try:
+                    all_uid2 = list(set(all_uid) - set(skip_uid))
+                except:
+                    print("Failed to skip given uid list, please check input")
+            # only keep uid in "keep_uid list"
+            if keep_uid is not None:
+                try:
+                    all_uid2 = list(set(all_uid) & set(keep_uid))
+                except:
+                    print("Failed to only keep given uid list, please check input")
+            all_uid = all_uid2
+            # find ksbj, which is the final number of subjects to be sampled from all_uid
+            if nsbj is None:
+                # if user only specify fraction, it should always be relative to the overall population
+                ksbj = int(len(uid_ls_raw)*frac)
+            else:
+                # ksbj cannot be greater than the length of all_uid
+                ksbj = min(int(nsbj), int(len(all_uid)))
+            ksbj = min(int(ksbj), int(len(all_uid)))
+            # recaculate frac_sbj
+            frac_sbj = ksbj/int(len(all_uid))
+            # stratified sampling
+            all_uid3 = np.array(all_uid) # convert list to np.array
+            if stratify_by is None:
+                all_uid3 = list(all_uid3[list(random.sample(list(range(len(all_uid3))), ksbj))])
+            else:
+                stratify_by = list(stratify_by)
+                stratify_by = list(set(stratify_by).intersection(set(self.variable_dict.keys())))
+                stratify_by_list = [var for var in stratify_by if 'factor' in self.variable_dict[var].keys()]
+                print("--- Stratify sampling by :" + str(stratify_by_list))
+                # find all raw columns in df_raw columns that intersects stratify_by (i.e. ['y', 'txp'])
+                colnames = []
+                for var in stratify_by_list: 
+                    colnames = colnames + list(self.variable_dict[var]['src_names'])
+                colnames = list(set(colnames).intersection(set(df_raw.columns)))
+                all_uid3 = list(df_raw.groupby(colnames)[uid_col].apply(lambda x: x.sample(frac=frac_sbj)).reset_index(drop=True).unique())
+            # final filtered df_raw
+            df_raw = df_raw.loc[df_raw[uid_col].isin(list(all_uid3)),:]
+            # update global df_raw_uid_ls that keeps track of sampling info from raw dataframe
+            # allow sampling with/without replacement
+            if replace:
+                self.df_raw_uid_ls = uid_ls_raw
+            else:
+                self.df_raw_uid_ls = list(set(uid_ls_raw) - set(all_uid3))
+
+        ################# generate MVTS from csv_pool ################# 
+        if csv_pool_dir is not None:
+            print("Project is sampling from csv_pool --- ")
+            hist1 = {'from': 'csv_pool', 'path': str(csv_pool_dir), 'sep': str(sep)}
+            print("csv_pool_dir: "+str(csv_pool_dir))
+            # reload csv_source_dict
+            self.load_csv_source_dict()
+            # stop if csv_source dict is not ready
+            if self.csv_source_dict is None:
+                return
+            # sampling from csv_pool
+            if self.df_csv_fullname_ls is None:
+                self.df_csv_fullname_ls = init_csv_fullname_ls(csv_pool_dir, sep=sep)
+            if replace:
+                self.df_csv_fullname_ls = init_csv_fullname_ls(csv_pool_dir, sep=sep)
+            
+            
         # special arguments
         hist2 = {
             'with_replacement': 'yes' if replace else 'no',
@@ -277,7 +531,7 @@ class Project:
                 print("add attrs to mvts_df failed")
                 pass
 
-            print("Success! Project has updated attributes --- mvts_df, sbj_df, sample_info, df_csv_fullname_ls")
+            print("Success! Project has updated attributes --- mvts_df, sbj_df, sample_info")
             self.hist_build_mvts = {'datetime':str(datetime.now())}
             self.hist_build_mvts.update({'data_source':hist1})
             self.hist_build_mvts.update({'sampling':hist2})

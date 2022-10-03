@@ -35,6 +35,7 @@ def make_sample_info_from_csv(df_file_dict, source_dict, variable_dict, nsbj=Non
         stratify_by_list = []
     else:
         stratify_by = list(stratify_by)
+        stratify_by = list(set(stratify_by).intersection(set(variable_dict.keys())))
         stratify_by_list = [var for var in stratify_by if 'factor' in variable_dict[var].keys()]
         print("--- Stratify sampling by :" + str(stratify_by_list))
     
@@ -69,7 +70,7 @@ def make_sample_info_from_csv(df_file_dict, source_dict, variable_dict, nsbj=Non
             frac = min(int(nsbj),int(NSBJ_include)) / NSBJ_include
         
         G = list(grouping_df.columns[~grouping_df.columns.isin(['__uid','__anchor'])])
-        uid_sampled = list(grouping_df.groupby(G)['__uid'].apply(lambda x: x.sample(frac=frac)).reset_index(drop=True))
+        uid_sampled = list(grouping_df.groupby(G)['__uid'].apply(lambda x: x.sample(frac=frac)).reset_index(drop=True).unique())
         df_sample_info = df_file_dict[df_file_dict["__uid"].isin(list(uid_sampled))]  
 
     df_file_dict_updated.loc[df_file_dict_updated["__uid"].isin(list(df_sample_info['__uid'])), 'already_sampled'] += 1
