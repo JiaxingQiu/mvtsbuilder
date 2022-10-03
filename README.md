@@ -53,13 +53,13 @@ print(prj)
 import pandas as pd
 
 df = pd.read_csv("PATH_TO_YOUR_CSV.csv")
-prj.build_mvts(df_raw=df)
+prj.build_mvts(source=df)
 print(prj)
 
 # from csv_pool
 csv_pool_path = 'PATH_TO_YOUR_CSV_POOL'
 prj.build_mvts(
-    csv_pool_dir = csv_pool_path, 
+    source = csv_pool_path, 
     nsbj = 1000, 
     sep = '_')
 print(prj)
