@@ -428,10 +428,12 @@ class Project:
             else:
                 # ksbj cannot be greater than the length of all_uid
                 ksbj = min(int(nsbj), int(len(all_uid)))
+                
             ksbj = min(int(ksbj), int(len(all_uid)))
             print(str(ksbj) +" out of "+str(len(uid_ls_raw)) +" is sampled!")
             # recaculate frac_sbj
             frac_sbj = ksbj/int(len(all_uid))
+            
             # stratified sampling
             all_uid3 = np.array(all_uid) # convert list to np.array
             if stratify_by is None:
@@ -678,7 +680,15 @@ class Project:
         self.hist_split_mvts.update({'imputation':hist2})
         self.hist_split_mvts.update({'tensorflow_dateset':hist3})
         
-        
+    def set_mvts_df(self, new_df):
+        # make sure Project has episode object at hand by now
+        if (self.episode is None) or (self.hist_def_episode is None):
+            return 'Project has no episode defined -- you can use def_episode() to define one'
+        else:
+            print("Your new dataframe will be compatible with episode definition:\n")
+            print(json.dumps(self.hist_def_episode, indent=2))
+        self.mvts_df = new_df  
+    
         
     def extract_xy(self, shape_type="3d"):
         

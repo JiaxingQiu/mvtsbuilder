@@ -3,13 +3,12 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.impute import SimpleImputer
 import numpy as np
- 
+import missingno as msno
 
 def cohort_fillna(refer_df, df, vars, method=None, fill_value=-333, viz=False):
     # refer_df is the one to train the parameters of imputor 
     # df is the target dataframe to impute
     if viz:
-        import missingno as msno
         msno.matrix(df, figsize=[10, 3], fontsize=6)
         plt.show()
         
@@ -24,7 +23,7 @@ def cohort_fillna(refer_df, df, vars, method=None, fill_value=-333, viz=False):
     elif method == "constant":
         imputer = SimpleImputer(strategy='constant', fill_value=fill_value)
     else:
-        print("--- Unrecogenized imputation method. original df returned")
+        print("--- Unrecogenized method. None imputation.")
         return df
     
     refer_df[vars] = refer_df[vars].replace([np.inf, -np.inf], np.nan, inplace=False)
