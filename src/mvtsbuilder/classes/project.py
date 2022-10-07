@@ -1,4 +1,4 @@
-""" Project class. 2nd step in FAIR Medical AI framework, go through fucntionalities in data Projecting, following FAIR principle and 
+""" Project class. 2nd step in FAIR Medical AI framework, go through functionalities in data Projecting, following FAIR principle and 
     connecting to FAIRSCAPE web server.
 
     Module description details
@@ -80,17 +80,17 @@ class Project:
 
         # set initial datetime for a project instance
         self.datetime = str(datetime.now())
-        print('Project begins at: ' + str(self.datetime))
+        print('\n\nProject begins at: ' + str(self.datetime))
         # set study working directory
         self.work_dir = work_dir
-        assert os.path.exists(self.work_dir), 'Working directory not found: '+str(self.work_dir)
+        assert os.path.exists(self.work_dir), '\n\nWorking directory not found: '+str(self.work_dir)
         os.chdir(self.work_dir)
-        print('Working directory: ' + str(self.work_dir))
+        print('\n\nWorking directory: ' + str(self.work_dir))
         # set meta data of dictionarys directory 
         self.meta_dir = str(self.work_dir) + '/meta_data'
         if not os.path.exists(self.meta_dir):
             os.mkdir(self.meta_dir)
-        print('Meta_data directory: ' + str(self.meta_dir))
+        print('\n\nMeta_data directory: ' + str(self.meta_dir))
         # set variable_dict
         self.load_variable_dict()
         # set csv_source_dict
@@ -127,9 +127,9 @@ class Project:
                     'csv_source_dict': str(self.meta_dir)+'/csv_source_dict.json' if self.csv_source_dict is not None else str(self.meta_dir)+'/csv_source_dict.json not found'
                 },
                 'ml_var':{
-                    'inputs': str(self.input_vars),
-                    'outputs': str(self.output_vars),
-                    'others': str(self.input_vars_byside + self.output_vars_byside)
+                    'inputs': str(self.input_vars) if self.input_vars is not None else 'None',
+                    'outputs': str(self.output_vars) if self.output_vars is not None else 'None',
+                    'others': str(self.input_vars_byside + self.output_vars_byside) if (self.input_vars_byside is not None) or (self.output_vars_byside is not None) else 'None'
                 }
             },
             'Episode Definition': self.hist_def_episode,
@@ -139,7 +139,7 @@ class Project:
         print(json.dumps(self.hist, indent=2))
         return 'Project Status'
 
-    def load_variable_dict(self):
+    def load_variable_dict(self, silence=False):
         """Read variable dictionary object as an attribute of mvtsbuilder project.
         
         Attribute variable_dict will be open and read from variable_dict.json file under work_dir/meta_data folder.
@@ -174,9 +174,9 @@ class Project:
             f = open(fullname, "r")
             self.variable_dict = json.loads(f.read())
             print("Project variable dictionary loaded;")
-            print(json.dumps(self.variable_dict, indent=2))
+            if not silence: print(json.dumps(self.variable_dict, indent=2))
         except:
-            print("--- Project variable_dict.json not exist. ---")
+            print("\n\n--- Project variable_dict.json not exist. ---")
             print("You can put a previous 'variable_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
             print("Or, You can use function .new_demo_variable_dict() to create one. Please modify the newly created file '"+str(self.work_dir)+"/meta_data/demo_variable_dict_TIMESTAMP.json' and save it as '"+str(self.work_dir)+"/meta_data/variable_dict.json';")
         if self.variable_dict is not None:
@@ -225,7 +225,7 @@ class Project:
             self.output_vars_byside = output_vars_byside
     
 
-    def load_csv_source_dict(self):
+    def load_csv_source_dict(self, silence=False):
         """Read csv sources dictionary object as an attribute of mvtsbuilder project.
         
         Attribute csv_source_dict will be open and read from csv_source_dict.json file under work_dir/meta_data folder.
@@ -252,9 +252,9 @@ class Project:
             f = open(fullname, "r")
             self.csv_source_dict = json.loads(f.read())
             print("Project csv_source dictionary loaded;")
-            print(json.dumps(self.csv_source_dict, indent=2))
+            if not silence: print(json.dumps(self.csv_source_dict, indent=2))
         except:
-            print("--- Project csv_source_dict.json not exist. ---")
+            print("\n\n--- Project csv_source_dict.json not exist. ---")
             print("You can put a previous 'csv_source_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
             print("Or, You can use function .new_demo_csv_source_dict() to create one. Please modify the newly created file '"+str(self.work_dir)+"/meta_data/demo_csv_source_dict_TIMESTAMP.json' and save it as '"+str(self.work_dir)+"/meta_data/csv_source_dict.json';")
     
@@ -290,7 +290,7 @@ class Project:
         """
         
         # relaod dictionaries
-        self.load_variable_dict()
+        self.load_variable_dict(silence=True)
         # make sure Project has variable_dict object at hand by now
         if self.variable_dict is None: 
             return
@@ -395,7 +395,7 @@ class Project:
         ################# generate MVTS from df_raw #################
         # filtering raw dataframe by requests
         if df_raw is not None:
-            print("Project is Projecting customized table format data ---")
+            print("--- MVTSbuilder Project is engineering customized table format data ---")
             hist1 = {'from': 'pandas dataframe object'}
             # find __uid column in the raw data
             uid_col = list(set(self.variable_dict['__uid']['src_names']).intersection(set(df_raw.columns)))[0]
@@ -429,6 +429,7 @@ class Project:
                 # ksbj cannot be greater than the length of all_uid
                 ksbj = min(int(nsbj), int(len(all_uid)))
             ksbj = min(int(ksbj), int(len(all_uid)))
+            print(str(ksbj) +" out of "+str(len(uid_ls_raw)) +" is sampled!")
             # recaculate frac_sbj
             frac_sbj = ksbj/int(len(all_uid))
             # stratified sampling
@@ -439,7 +440,7 @@ class Project:
                 stratify_by = list(stratify_by)
                 stratify_by = list(set(stratify_by).intersection(set(self.variable_dict.keys())))
                 stratify_by_list = [var for var in stratify_by if 'factor' in self.variable_dict[var].keys()]
-                print("--- Stratify sampling by :" + str(stratify_by_list))
+                print("\n\n--- Stratify sampling by :" + str(stratify_by_list))
                 # find all raw columns in df_raw columns that intersects stratify_by (i.e. ['y', 'txp'])
                 colnames = []
                 for var in stratify_by_list: 
@@ -461,7 +462,7 @@ class Project:
             hist1 = {'from': 'csv_pool', 'path': str(csv_pool_dir), 'sep': str(sep)}
             print("csv_pool_dir: "+str(csv_pool_dir))
             # reload csv_source_dict
-            self.load_csv_source_dict()
+            self.load_csv_source_dict(silence=True)
             # stop if csv_source dict is not ready
             if self.csv_source_dict is None:
                 return
@@ -540,7 +541,54 @@ class Project:
 
 
     def split_mvts(self, valid_frac=0, test_frac=0, byepisode=False, batch_size=32, impute_input=None, impute_output=None, fill_value=-333, viz=False):
+        """Split episode-wise Multi-Variable Time Series DataFrame into training, validation and testing dataframes or Tensorflow Datasets for a ML model.
         
+        
+        Parameters
+        ----------
+        valid_frac: float
+            proportion of all data to be used in validation set.
+        test_frac: float
+            proportion of all data to be used in testing set.
+        byepisode: bool
+            whether or not to split by episode, if False, split by subject, if True, split by episode.
+        batch_size: int
+            batch size of Tensorflow Dataset to return.
+        impute_input: str
+            type of imputation to be done on ML input variables (explanatory variables).
+        impute_output: str
+            type of imputation to be done on ML output variables (responce variables).
+        fill_value: float
+            a number to mask all missing cells if impute by "constant" 
+        viz: bool
+            [under improvement] whether or not to visualize distribution of each variable, and their stratified distribution by outcome
+        
+        Returns
+        -------
+        mvtsbuilder.Project.train_df_imputed
+            pandas.DataFrame object of multi-variable time series data of stacked episodes for ML training. 
+        mvtsbuilder.Project.valid_df_imputed
+            pandas.DataFrame object of multi-variable time series data of stacked episodes for ML validation. 
+        mvtsbuilder.Project.test_df_imputed
+            pandas.DataFrame object of multi-variable time series data of stacked episodes for ML testing. 
+        mvtsbuilder.Project.train_tfds
+            Tensorflow Dataset object of 3D multi-variable time series ML training dataset.
+        mvtsbuilder.Project.valid_tfds
+            Tensorflow Dataset object of 3D multi-variable time series ML validation dataset.
+        mvtsbuilder.Project.test_tfds
+            Tensorflow Dataset object of 3D multi-variable time series ML testing dataset.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> myprj = mvtsbuilder.Project("parent_folders/myproject")
+        >>> df = pd.read_csv(".../yourdata.csv")
+        >>> myprj.build_mvts(source="csv_pool_path", nsbj=300, replace=True, sep='_')
+        >>> myprj.split_mvts(valid_frac=0.2, test_frac=0.1, byepisode=False, batch_size=64, impute_input="constant", impute_output="none", fill_value=-333, )
+        >>> print(myprj)
+        """
+
+
         # make sure Project has mvts_df object at hand by now
         if self.mvts_df is None:
             return 'No episode-wise MVTS dataframe defined -- you can use build_mvts() to build one'
@@ -633,6 +681,7 @@ class Project:
         
         
     def extract_xy(self, shape_type="3d"):
+        
         X_train=None
         Y_train=None
         X_valid=None
@@ -653,10 +702,12 @@ class Project:
         # read dict_demo in dictionary object
         dict_demo = json.loads(json_obj.read())
         # save it to meta_data folder under user project working directory
-        with open(self.meta_dir + '/demo_variable_dict_'+str(datetime.now())+'.json', 'w') as f:
+        with open(self.meta_dir + '/demo_variable_dict_'+str(datetime.now().strftime("%Y%m%d-%H%M%S"))+'.json', 'w') as f:
             json.dump(dict_demo, f)
         print("A new demo of variable dictionary is ready for you, using path: \n")
-        return str(self.meta_dir) + '/demo_variable_dict_'+str(datetime.now())+'.json'
+        path = str(self.meta_dir) + '/demo_variable_dict_'+str(datetime.now().strftime("%Y%m%d-%H%M%S"))+'.json'
+        print(path)
+        return path
     
     
     def new_demo_csv_source_dict(self):
@@ -667,10 +718,12 @@ class Project:
         # read dict_demo in dictionary object
         dict_demo = json.loads(json_obj.read())
         # save it to meta_data folder under user project working directory
-        with open(self.meta_dir + '/demo_csv_source_dict_'+str(datetime.now())+'.json', 'w') as f:
+        with open(self.meta_dir + '/demo_csv_source_dict_'+str(datetime.now().strftime("%Y%m%d-%H%M%S"))+'.json', 'w') as f:
             json.dump(dict_demo, f)
         print("A new demo of csv source dictionary is ready for you, using path: \n")
-        return str(self.meta_dir) + '/demo_csv_source_dict_'+str(datetime.now())+'.json'
+        path = str(self.meta_dir) + '/demo_csv_source_dict_'+str(datetime.now().strftime("%Y%m%d-%H%M%S"))+'.json'
+        print(path)
+        return path
       
     def create_csv_pool(self, csv_pool_dir=None, overwrite=False, source_key=None, file_key=None, sep="---"):
         import os
@@ -684,15 +737,15 @@ class Project:
                 else: 
                     print(str(csv_pool_dir) + ' already exist, you can remove the folder or set overwrite=True')
                     return
-        self.load_csv_source_dict()
-        self.load_variable_dict()
+        self.load_csv_source_dict(silence=True)
+        self.load_variable_dict(silence=True)
         assert self.csv_source_dict is not None, 'csv_source_dict.json not exist!'
         assert self.variable_dict is not None, 'variable_dict.json not exist!'
         create_csv_pool(self.csv_source_dict, self.variable_dict, csv_pool_dir, source_key=source_key, file_key=file_key, sep=sep)
       
     def cmp_src_csv(self, nrows=None, var_list=None):
-        self.load_csv_source_dict()
-        self.load_variable_dict()
+        self.load_csv_source_dict(silence=True)
+        self.load_variable_dict(silence=True)
         assert self.csv_source_dict is not None, 'csv_source_dict.json not exist!'
         assert self.variable_dict is not None, 'variable_dict.json not exist!'
         cmp_src_csv(self.csv_source_dict, self.variable_dict, nrows=nrows, var_list=var_list)

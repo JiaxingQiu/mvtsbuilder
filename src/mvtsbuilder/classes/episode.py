@@ -6,6 +6,7 @@
     an episode definition by initiating an episode object.
     
     Usage example:
+    >>> Episode(input_time_len=4*24*60,output_time_len=1*24*60, time_resolution=60, time_lag=0, anchor_gap=7*24*60)
 
 """
 import json
@@ -16,14 +17,24 @@ class Episode:
         """ 
         initiate an episode object to set the definition of an episode for the time series study
     
-        Arges:
-            output_time_len: how many original time unit before an anchor (e.g 48*60 minutes)
-            input_time_len: how many original time unit after an anchor (e.g 24*60 minutes)
-            time_resolution: new resoluted unit of time, e.g every 15 minutes
-            time_gap: minimum original time units between two episode anchors
-        
-        Returns:
-            self attributes with corresponding names
+        Parameters
+        ----------
+        input_time_len: float
+            time length before an anchor of episode to use as input in ML, in raw temporal scale defined in variable_dict
+        output_time_len: float
+            time length after an anchor of episode to use as output in ML, in raw temporal scale defined in variable_dict
+        time_resolution: float
+            how long in raw scale is aggregated into a unit in final episode, i.e. if your raw data is in minutes, you want to convert it to an hour per row, 60 should be given here.
+        time_lag: float
+            lag of time before input(X) chunk and output(y) chunk within an episode if any, in otehr words, how long you want to forecast ahead of the outcome. 
+        anchor_gap: float
+            minimum length of time (gap) between 2 episodes in raw scale. 
+
+        Returns
+        -------
+        object instance of Episode class
+            dict-like object of the definition of episide for current machine learning setting
+
         """
         
         self.time_resolution = None
