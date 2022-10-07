@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mvtsbuilder"
 version = "0.1.0"
-description = "Build d machine learning friendly MVTS( (multi-variable time series) dataframe or tensorflow dataset from raw data of csv or db format."
+description = "Build machine learning friendly MVTS (multi-variable time series) dataframe or tensorflow dataset from raw data of csv or db format."
 authors = ["Jiaxing Qiu"]
 license = "MIT"
 readme = "README.md"
