@@ -1,6 +1,6 @@
 # mvtsbuilder
 
-Build d machine learning friendly MVTS( (multi-variable time series) dataframe or tensorflow dataset from raw data of csv or db format.
+Build Multi-variable Time Series (MVTS) pandas dataframe or tensorflow dataset, by uniforming multiple sources of raw data in csv format or database format to use in the same ML project.
 
 ## Installation
 
