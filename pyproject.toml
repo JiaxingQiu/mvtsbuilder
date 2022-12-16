@@ -18,8 +18,6 @@ tensorflow = "^2.10.0"
 jupyter = "^1.0.0"
 missingno = "^0.5.1"
 
-[tool.poetry.dev-dependencies]
-
 [tool.poetry.group.dev.dependencies]
 myst-nb = {version = "^0.17.1", python = "^3.9"}
 sphinx-autoapi = "^2.0.0"
