@@ -513,11 +513,35 @@ class Project:
                     else:
                         input_vars_byside = input_vars_byside + list(self.mvts_df.columns[self.mvts_df.columns.str.startswith(str(var_dict))])
             assert len(input_vars)>0, 'Project couldn\'t find input columns corresponding to the variable dictionary'
-            # check input vars are the same before and after Project
-            assert len(set(self.input_vars) & set(input_vars)) == len(self.input_vars), 'length of input_vars changed after Projecting'
-            assert len(set(self.output_vars) & set(output_vars)) == len(self.output_vars), 'length of output_vars changed after Projecting'
-            assert len(set(self.input_vars_byside) & set(input_vars_byside)) == len(self.input_vars_byside), 'length of input_vars_byside changed after Projecting'
-            assert len(set(self.output_vars_byside) & set(output_vars_byside)) == len(self.output_vars_byside), 'length of output_vars_byside changed after Projecting'
+            
+            # check input vars are the same before and after Project, give warnings if different
+            if not len(set(self.input_vars) & set(input_vars)) == len(self.input_vars):
+                print('length of input_vars changed after engineering')
+                print('self.input_vars:')
+                print(", ".join(self.input_vars))
+                print('input_vars:')
+                print(", ".join(input_vars))
+                
+            if not len(set(self.output_vars) & set(output_vars)) == len(self.output_vars):
+                print('length of output_vars changed after engineering')
+                print('self.output_vars:')
+                print(", ".join(self.output_vars))
+                print('output_vars:')
+                print(", ".join(output_vars))
+                
+            if not len(set(self.input_vars_byside) & set(input_vars_byside)) == len(self.input_vars_byside):
+                print('length of input_vars_byside changed after engineering')
+                print('self.input_vars_byside:')
+                print(", ".join(self.input_vars_byside))
+                print('input_vars_byside:')
+                print(", ".join(input_vars_byside))
+                
+            if not len(set(self.output_vars_byside) & set(output_vars_byside)) == len(self.output_vars_byside):
+                print('length of output_vars_byside changed after engineering')
+                print('self.output_vars_byside:')
+                print(", ".join(self.output_vars_byside))
+                print('output_vars_byside:')
+                print(", ".join(output_vars_byside))
             
             # reorder columns 
             base_vars = list(self.mvts_df.columns[~self.mvts_df.columns.isin(self.input_vars+self.output_vars+self.input_vars_byside+self.output_vars_byside)])

@@ -19,7 +19,7 @@ Usage is as follows:
 import mvtsbuilder
 
 work_dir = "your project folder directory" # path to your project folder
-prj = mvtsbuilder.project(work_dir)
+prj = mvtsbuilder.Project(work_dir)
 print(prj)
 ```
 
