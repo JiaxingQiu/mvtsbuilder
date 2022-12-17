@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.3 (17/12/2022)
+
+### Fix
+
+- Suppress Warning messages during build_mvts function
+- Allow reading in episode definition from json file
+- Other patchs
+
 ## v0.1.2 (16/12/2022)
 
 ### Fix

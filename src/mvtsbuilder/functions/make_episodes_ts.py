@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import pandas as pd
 import numpy as np
 
@@ -13,6 +16,8 @@ def make_episodes_ts(df_sbjs_ts, variable_dict, input_time_len, output_time_len,
 
     """
     pd.set_option('mode.chained_assignment', None)
+    pd.options.mode.chained_assignment = None
+    pd.set_option('chained_assignment', None)
 
     # factor type anchor
     orders=[]
@@ -95,7 +100,7 @@ def make_episodes_ts(df_sbjs_ts, variable_dict, input_time_len, output_time_len,
                     df_l = df_anchor.loc[df_anchor['__anchor'].isin(orders[:(i+1)])] # lower level anchors
                     df_u = df_anchor.loc[df_anchor['__anchor'].isin(orders[(i+1):])] # upper level anchors
                     df_o = df_anchor.loc[df_anchor['__anchor']==orders[i]] # current level anchor
-                    df_o.loc[:,'__ep_order'] = list(df_o.__time_bin//(anchor_gap//time_resolution))
+                    df_o['__ep_order'] = list(df_o.__time_bin//(anchor_gap//time_resolution))
                     df_o = df_o.loc[np.array(df_o.__ep_order.diff(1).isna())|np.array(df_o.__ep_order.diff(1)>=1),['__anchor','__time_bin','__time']]
                     # filter lower rank anchors that fall nearby df_o.__time_bin
                     for t in list(df_o.__time_bin): 
@@ -118,15 +123,15 @@ def make_episodes_ts(df_sbjs_ts, variable_dict, input_time_len, output_time_len,
             
             # find valid control group baseline time points
             df_sbj_ts_cntrl = df_sbj_ts.loc[df_sbj_ts.__time_bin.isin(df_anchor_cntrl.__time_bin),:]
-            df_sbj_ts_cntrl.loc[:,'__time_bin_org'] = list(df_sbj_ts_cntrl['__time_bin'])
-            df_sbj_ts_cntrl.loc[:,'__time_bin'] = list(range(1,df_sbj_ts_cntrl.shape[0]+1))
+            df_sbj_ts_cntrl['__time_bin_org'] = list(df_sbj_ts_cntrl['__time_bin'])
+            df_sbj_ts_cntrl['__time_bin'] = list(range(1,df_sbj_ts_cntrl.shape[0]+1))
             if df_sbj_ts_event.shape[0]>0:
                 df_sbj_ts_cntrl.loc[:,'__time_bin'] = df_sbj_ts_cntrl['__time_bin'] + np.max(df_sbj_ts_event.__time_bin)
             # use every first time bin as control group anchors
-            df_sbj_ts_cntrl.loc[:,'__ep_order'] = list((df_sbj_ts_cntrl.__time_bin-np.min(df_sbj_ts_cntrl.__time_bin))//(anchor_gap//time_resolution))
+            df_sbj_ts_cntrl['__ep_order'] = list((df_sbj_ts_cntrl.__time_bin-np.min(df_sbj_ts_cntrl.__time_bin))//(anchor_gap//time_resolution))
             df_anchor_cntrl = df_sbj_ts_cntrl.loc[np.array(df_sbj_ts_cntrl.__ep_order.diff(1).isna()) | np.array(df_sbj_ts_cntrl.__ep_order.diff(1)>=1),['__anchor','__time_bin','__time']]
             # shift input length
-            df_anchor_cntrl.loc[:,'__time_bin'] = df_anchor_cntrl['__time_bin'] + (input_time_len + time_lag)//time_resolution
+            df_anchor_cntrl['__time_bin'] = df_anchor_cntrl['__time_bin'] + (input_time_len + time_lag)//time_resolution
             # combine final anchors
             df_anchor = pd.concat([df_anchor_event, df_anchor_cntrl], axis=0)
             df_anchor = df_anchor.reset_index(drop=True)

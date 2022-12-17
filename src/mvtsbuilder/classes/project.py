@@ -300,9 +300,43 @@ class Project:
         print("Success! Project has updated attributes --- episode. ")
         self.hist_def_episode = {'datetime': str(datetime.now())}
         self.hist_def_episode.update(self.episode.__dict__)
+        print(self)
 
-         
-    def build_mvts(self, source=None, nsbj=None, frac=0.3, replace=True, stratify_by=None, skip_uid=None, keep_uid=None, return_episode=True, topn_eps=None, dummy_na=False, sep="---", viz=False, viz_ts=False):
+    def def_episode_from_json(self, path=None):
+        """define a project episode by reading in existing json file after project.episode.document() is called
+
+        Args:
+            path (str): string of a new file path provided elsewhere other than meta_data
+        """
+        try:
+            if path is None:
+                fullname = str(self.meta_dir)+'/episode.json'
+            else: 
+                fullname = str(path)
+            f = open(fullname, "r")
+            episode_json = json.loads(f.read())
+            print("Episode definition loaded;")
+            input_time_len = episode_json['input_time_len']
+            output_time_len = episode_json['output_time_len']
+            time_unit = episode_json['time_unit']
+            time_resolution = episode_json['time_resolution']
+            time_lag = episode_json['time_lag']
+            anchor_gap = episode_json['anchor_gap']
+            # initiate episode instance
+            self.episode = Episode(input_time_len, output_time_len, time_unit, time_resolution=time_resolution, time_lag=time_lag, anchor_gap=anchor_gap)
+            # collect success history dictionary
+            print("Success! Project has updated attributes --- episode. ")
+            self.hist_def_episode = {'datetime': str(datetime.now())}
+            self.hist_def_episode.update(self.episode.__dict__)
+            print(self)
+        except:
+            return "def_episode_from_json failed!"
+
+
+
+
+
+    def build_mvts(self, source=None, nsbj=None, frac=0.3, replace=False, stratify_by=None, skip_uid=None, keep_uid=None, return_episode=True, topn_eps=None, dummy_na=False, sep="---", viz=False, viz_ts=False):
         """Build episode-wise Multi-Variable Time Series DataFrame.
         
         
@@ -434,6 +468,7 @@ class Project:
             # recaculate frac_sbj
             frac_sbj = ksbj/int(len(all_uid))
             
+
             # stratified sampling
             all_uid3 = np.array(all_uid) # convert list to np.array
             if stratify_by is None:
@@ -451,6 +486,7 @@ class Project:
                 all_uid3 = list(df_raw.groupby(colnames)[uid_col].apply(lambda x: x.sample(frac=frac_sbj)).reset_index(drop=True).unique())
             # final filtered df_raw
             df_raw = df_raw.loc[df_raw[uid_col].isin(list(all_uid3)),:]
+            
             # update global df_raw_uid_ls that keeps track of sampling info from raw dataframe
             # allow sampling with/without replacement
             if replace:
@@ -569,7 +605,8 @@ class Project:
             self.hist_build_mvts.update({'data_source':hist1})
             self.hist_build_mvts.update({'sampling':hist2})
             self.hist_build_mvts.update({'return':hist3})
-            
+        
+        print(self)
 
 
     def split_mvts(self, valid_frac=0, test_frac=0, byepisode=False, batch_size=32, impute_input=None, impute_output=None, fill_value=-333, viz=False):
@@ -709,6 +746,7 @@ class Project:
         self.hist_split_mvts.update({'split_dataframe':hist1})
         self.hist_split_mvts.update({'imputation':hist2})
         self.hist_split_mvts.update({'tensorflow_dateset':hist3})
+        print(self)
         
     def set_mvts_df(self, new_df):
         # make sure Project has episode object at hand by now
