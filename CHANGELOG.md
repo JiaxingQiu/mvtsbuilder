@@ -8,7 +8,6 @@
 
 - Suppress Warning messages during build_mvts function
 - Allow reading in episode definition from json file
-- Other patchs
 
 ## v0.1.2 (16/12/2022)
 
