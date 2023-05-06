@@ -139,7 +139,7 @@ def make_episodes_ts(df_sbjs_ts, variable_dict, input_time_len, output_time_len,
                 print("Error ----  no valid anchor found!")
                 continue
 
-            # combine fianl subject ts df
+            # combine final subject ts df
             df_sbj_ts_cntrl = df_sbj_ts_cntrl.loc[:,list(set(df_sbj_ts_cntrl.columns)&set(df_sbj_ts_event.columns))]
             df_sbj_ts = pd.concat([df_sbj_ts_event, df_sbj_ts_cntrl], axis=0)
             df_sbj_ts = df_sbj_ts.reset_index(drop=True)

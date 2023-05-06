@@ -102,26 +102,30 @@ def fix_df_raw(variable_dict, df_raw, source_key):
                 print("--- scaling " + str(var) + " --- skipped")
             
             try:
+                # find upper boundary
                 upper = np.nanmax(df_raw[var])
                 if variable_dict[var]['numeric']['cutoff']['quantile_max'] is not None:
                     upper = np.nanmin([upper, np.nanquantile(df_raw[var], float(variable_dict[var]['numeric']['cutoff']['quantile_max']))] )
                 if variable_dict[var]['numeric']['cutoff']['value_max'] is not None:
                     upper = np.nanmin([upper, float(variable_dict[var]['numeric']['cutoff']['value_max'])])
-                df_raw.loc[df_raw[var]>upper,[var]] = upper 
-                print("--- fix upper boundary for " + str(var) + " by " + str(upper))
-            except:
-                print("--- fix upper boundary for " + str(var) + " --- failed.")
-            try:
+                
+                # find lower boundary
                 lower = np.nanmin(df_raw[var])
                 if variable_dict[var]['numeric']['cutoff']['quantile_min'] is not None:
                     lower = np.nanmax([lower, np.nanquantile(df_raw[var], float(variable_dict[var]['numeric']['cutoff']['quantile_min']))])
                 if variable_dict[var]['numeric']['cutoff']['value_min'] is not None:
                     lower = np.nanmax([lower, float(variable_dict[var]['numeric']['cutoff']['value_min'])])
-                df_raw.loc[df_raw[var]<lower,[var]] = lower 
-                print("--- fix lower boundary for " + str(var) + " by " + str(lower))
-            except:
-                print("--- fix lower boundary for " + str(var) + " --- failed.")
+                
+                # find a jittering unit before fixing
+                jitter = (upper-lower)/100
+                df_raw.loc[df_raw[var]>upper,[var]] = upper + jitter 
+                df_raw.loc[df_raw[var]<lower,[var]] = lower - jitter 
 
+                print("--- fix boundary for " + str(var) + " at [" + str(lower - jitter) + " ," + str(upper + jitter) + "]")
+            except:
+                print("--- fix boundary for " + str(var) + " --- failed.")
+            
+        
            
         # ---- fix factor variables ----
         if 'factor' in variable_dict[var].keys():

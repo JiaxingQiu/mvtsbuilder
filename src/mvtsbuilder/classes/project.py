@@ -258,6 +258,7 @@ class Project:
             print("You can put a previous 'csv_source_dict.json' file in path '"+str(self.work_dir)+"/meta_data'.")
             print("Or, You can use function .new_demo_csv_source_dict() to create one. Please modify the newly created file '"+str(self.work_dir)+"/meta_data/demo_csv_source_dict_TIMESTAMP.json' and save it as '"+str(self.work_dir)+"/meta_data/csv_source_dict.json';")
     
+    
     def def_episode(self, input_time_len, output_time_len, time_resolution=None, time_lag=None, anchor_gap=None):
         """Define Episode for a MVTS project.
         
@@ -301,6 +302,7 @@ class Project:
         self.hist_def_episode = {'datetime': str(datetime.now())}
         self.hist_def_episode.update(self.episode.__dict__)
         print(self)
+
 
     def def_episode_from_json(self, path=None):
         """define a project episode by reading in existing json file after project.episode.document() is called
