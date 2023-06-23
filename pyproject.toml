@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mvtsbuilder"
-version = "0.1.4"
+version = "0.1.5"
 description = "Build Multi-variable Time Series (MVTS) pandas dataframe or tensorflow dataset, by uniforming multiple sources of raw data in csv format or database format to use in the same ML project."
 authors = ["Jiaxing Qiu"]
 license = "MIT"
