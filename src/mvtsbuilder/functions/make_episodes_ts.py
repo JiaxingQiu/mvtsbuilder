@@ -3,7 +3,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
 import numpy as np
+#from numba import njit
 
+#@njit(parallel = True, nopython=False)
 def make_episodes_ts(df_sbjs_ts, variable_dict, input_time_len, output_time_len, time_resolution, time_lag, anchor_gap, topn_eps=None):
     """ Summary: make a data frame of stacked episode time sequences
     
